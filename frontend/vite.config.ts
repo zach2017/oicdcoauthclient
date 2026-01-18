@@ -7,6 +7,7 @@ export default defineConfig({
     port: 3000,
     host: true, // Allow access from network (for iOS testing)
   },
+  
   preview: {
     port: 3000,
   },
