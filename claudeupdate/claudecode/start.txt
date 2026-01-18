@@ -1,0 +1,6 @@
+
+https://code.claude.com/docs
+
+winget install Anthropic.ClaudeCode
+
+winget upgrade Anthropic.ClaudeCode
