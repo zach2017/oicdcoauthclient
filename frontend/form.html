@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Option A: set "env" via meta tag -->
+    <meta name="BIT_SHIFT" content="5" />
+
+    <!-- Tailwind CDN (fine for demos; use a build pipeline for production) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <title>Secure-ish Form (Bit Shift)</title>
+
+    <!-- Option B: set "env" via global variable (works when you inject at build time) -->
+    <script>
+      // Example: window.__ENV__ injected by your host/build step
+      // window.__ENV__ = { BIT_SHIFT: "5", API_URL: "https://example.com/sendata" };
+    </script>
+  </head>
+
+  <body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100">
+    <div class="mx-auto max-w-3xl px-4 py-12">
+      <header class="mb-8">
+        <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          Fancy Tailwind Form • Bit-Shift “Encryption”
+        </div>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">Send Data</h1>
+        <p class="mt-2 text-slate-300">
+          This demo obfuscates the payload using a bit shift configured by an env-style value, then sends it to an API.
+        </p>
+      </header>
+
+      <main class="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur">
+        <form id="secureForm" class="space-y-6">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="mb-2 block text-sm font-medium text-slate-200">Full Name</label>
+              <input
+                name="fullName"
+                type="text"
+                required
+                placeholder="Zachary Lewis"
+                class="w-full rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-slate-100 placeholder:text-slate-500 outline-none ring-0 transition focus:border-indigo-400/60 focus:bg-slate-950/60 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.15)]"
+              />
+            </div>
+
+            <div>
+              <label class="mb-2 block text-sm font-medium text-slate-200">Email</label>
+              <input
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+                class="w-full rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-400/60 focus:bg-slate-950/60 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.15)]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">Message</label>
+            <textarea
+              name="message"
+              rows="4"
+              required
+              placeholder="Type something you'd like to send..."
+              class="w-full resize-none rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-indigo-400/60 focus:bg-slate-950/60 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.15)]"
+            ></textarea>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="rounded-xl border border-white/10 bg-slate-950/30 p-4">
+              <p class="text-xs uppercase tracking-wide text-slate-400">Bit Shift (from env)</p>
+              <p id="shiftValue" class="mt-1 text-lg font-semibold text-slate-100">—</p>
+              <p class="mt-2 text-sm text-slate-300">
+                Read from <code class="rounded bg-white/10 px-1 py-0.5">window.__ENV__</code> or meta tag.
+              </p>
+            </div>
+
+            <div class="rounded-xl border border-white/10 bg-slate-950/30 p-4">
+              <p class="text-xs uppercase tracking-wide text-slate-400">API Endpoint</p>
+              <p id="apiValue" class="mt-1 text-sm font-medium text-slate-100 break-all">—</p>
+              <p class="mt-2 text-sm text-slate-300">
+                Defaults to <code class="rounded bg-white/10 px-1 py-0.5">/sendata</code> if not set.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button
+              id="submitBtn"
+              type="submit"
+              class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-5 py-3 font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400 focus:outline-none focus:shadow-[0_0_0_4px_rgba(99,102,241,0.25)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span>Encrypt & Send</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-90" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M3 10a1 1 0 011-1h6V6a1 1 0 112 0v3h4a1 1 0 110 2h-4v3a1 1 0 11-2 0v-3H4a1 1 0 01-1-1z" />
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              id="previewBtn"
+              class="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-slate-100 transition hover:bg-white/10"
+            >
+              Preview Encrypted Payload
+            </button>
+
+            <span id="status" class="text-sm text-slate-300"></span>
+          </div>
+
+          <div class="mt-6 hidden rounded-xl border border-white/10 bg-slate-950/40 p-4" id="previewBox">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-semibold text-slate-200">Encrypted Payload</p>
+              <button
+                type="button"
+                id="copyBtn"
+                class="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+              >
+                Copy
+              </button>
+            </div>
+            <pre id="preview" class="mt-3 overflow-auto text-xs leading-relaxed text-slate-200"></pre>
+            <p class="mt-3 text-xs text-slate-400">
+              This is base64 of the obfuscated bytes. Anyone with the shift/key can reverse it.
+            </p>
+          </div>
+        </form>
+      </main>
+
+      <footer class="mt-8 text-sm text-slate-400">
+        Tip: for “env variables” in the browser, inject them at build/deploy time (Vite: <code class="rounded bg-white/10 px-1">import.meta.env</code>).
+      </footer>
+    </div>
+
+    <script>
+      // ---------------------------
+      // "Env" helpers
+      // ---------------------------
+      function getMeta(name) {
+        const el = document.querySelector(`meta[name="${name}"]`);
+        return el ? el.getAttribute("content") : null;
+      }
+
+      function getEnv(name, fallback = null) {
+        // Option 1: injected global (common for static hosting)
+        if (window.__ENV__ && window.__ENV__[foo] != null) return String(window.__ENV__[foo]);
+        // Option 2: meta tag
+        const m = getMeta(name);
+        if (m != null) return String(m);
+        return fallback;
+      }
+
+      // ---------------------------
+      // Bit-shift "encryption" (obfuscation)
+      // - shifts each byte and xors with a simple derived key
+      // ---------------------------
+      function clampShift(n) {
+        // keep it in 0..7 so byte shifts are sane
+        n = Number(n);
+        if (!Number.isFinite(n)) return 0;
+        n = Math.floor(n);
+        return ((n % 8) + 8) % 8;
+      }
+
+      function deriveXorKey(shift) {
+        // small derived key (0..255) from shift
+        return (shift * 73 + 41) & 0xff;
+      }
+
+      function encryptStringToBase64(plainText, shift) {
+        const enc = new TextEncoder();
+        const bytes = enc.encode(plainText);
+        const key = deriveXorKey(shift);
+
+        const out = new Uint8Array(bytes.length);
+        for (let i = 0; i < bytes.length; i++) {
+          const b = bytes[i];
+          // (b << shift) | (b >> (8-shift)) is a rotate-left
+          const rotated =
+            shift === 0 ? b : ((b << shift) | (b >>> (8 - shift))) & 0xff;
+          out[i] = rotated ^ key;
+        }
+
+        // base64
+        let bin = "";
+        out.forEach((x) => (bin += String.fromCharCode(x)));
+        return btoa(bin);
+      }
+
+      // ---------------------------
+      // Form logic
+      // ---------------------------
+      const form = document.getElementById("secureForm");
+      const statusEl = document.getElementById("status");
+      const shiftEl = document.getElementById("shiftValue");
+      const apiEl = document.getElementById("apiValue");
+      const previewBox = document.getElementById("previewBox");
+      const previewEl = document.getElementById("preview");
+      const submitBtn = document.getElementById("submitBtn");
+
+      const previewBtn = document.getElementById("previewBtn");
+      const copyBtn = document.getElementById("copyBtn");
+
+      const SHIFT = clampShift(getEnv("BIT_SHIFT", '');
+      const API_URL = getEnv("API_URL", "/sendata");
+
+      shiftEl.textContent = String(SHIFT);
+      apiEl.textContent = API_URL;
+
+      function collectFormData() {
+        const fd = new FormData(form);
+        return {
+          fullName: String(fd.get("fullName") || ""),
+          email: String(fd.get("email") || ""),
+          message: String(fd.get("message") || ""),
+          clientTime: new Date().toISOString(),
+        };
+      }
+
+      function buildEncryptedPayload() {
+        const data = collectFormData();
+        const json = JSON.stringify(data);
+        const cipherTextB64 = encryptStringToBase64(json, SHIFT);
+
+        return {
+          alg: "bitshift-rotate-xor-b64",
+          shift: SHIFT,
+          // NOTE: in real crypto you would NOT send keys; this is just metadata
+          payload: cipherTextB64,
+        };
+      }
+
+      function setStatus(msg, isError = false) {
+        statusEl.textContent = msg;
+        statusEl.className = "text-sm " + (isError ? "text-rose-300" : "text-slate-300");
+      }
+
+      previewBtn.addEventListener("click", () => {
+        const encrypted = buildEncryptedPayload();
+        previewEl.textContent = JSON.stringify(encrypted, null, 2);
+        previewBox.classList.remove("hidden");
+        setStatus("Preview updated.");
+      });
+
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(previewEl.textContent || "");
+          setStatus("Copied encrypted payload to clipboard.");
+        } catch {
+          setStatus("Could not copy to clipboard (browser permissions).", true);
+        }
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setStatus("");
+        submitBtn.disabled = true;
+
+        try {
+          const encrypted = buildEncryptedPayload();
+
+          // optional: show preview after submit
+          previewEl.textContent = JSON.stringify(encrypted, null, 2);
+          previewBox.classList.remove("hidden");
+
+          setStatus("Sending…");
+
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(encrypted),
+          });
+
+          if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            throw new Error(`API error ${res.status}. ${text}`.trim());
+          }
+
+          setStatus("Sent successfully ✅");
+          form.reset();
+        } catch (err) {
+          setStatus(err?.message || "Something went wrong.", true);
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
