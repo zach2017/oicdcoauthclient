@@ -1,18 +1,24 @@
 package com.example.demo.controller;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import com.example.demo.service.HelloService;
 
 /**
  * Hello Controller - Protected by Keycloak OAuth2.
@@ -21,6 +27,9 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/hello")
 public class HelloController {
+
+     @Autowired
+    HelloService hello;
 
     /**
      * Basic hello endpoint - requires ADMIN role (configured in SecurityConfig)

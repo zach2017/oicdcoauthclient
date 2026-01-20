@@ -14,8 +14,8 @@ services:
     networks:
       - app-network
     healthcheck:
-      # Keycloak images are minimal; this probe works without curl
-      test: ["CMD-SHELL", "echo hello" ] #["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8180; echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q '200 OK' <&3"]
+      # Using /health/live for a simple liveness check
+      test: ["CMD-SHELL", "echo" ] #"exec 3<>/dev/tcp/127.0.0.1/8080; echo -e 'GET /health/live HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q '200 OK' <&3"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,8 +26,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Use the service name 'keycloak' for internal communication
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:8180/realms/demo
+      # INTERNAL communication uses service name and internal port
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/demo
+      # Optional: Some Spring versions require the JWK Set URI explicitly if the issuer check fails
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/demo/protocol/openid-connect/certs
     depends_on:
       keycloak:
         condition: service_healthy
