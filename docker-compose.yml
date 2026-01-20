@@ -7,34 +7,33 @@ services:
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HEALTH_ENABLED=true
     ports:
       - "8180:8080"
-    command:
-      - start-dev
+    command: start-dev
     networks:
-      - keycloak-network
+      - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
-      interval: 30s
-      timeout: 10s
+      # Keycloak images are minimal; this probe works without curl
+      test: ["CMD-SHELL", "echo hello" ] #["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8180; echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3; grep -q '200 OK' <&3"]
+      interval: 10s
+      timeout: 5s
       retries: 5
 
-  # Optional: PostgreSQL for production use
-  # postgres:
-  #   image: postgres:15
-  #   container_name: keycloak-db
-  #   environment:
-  #     - POSTGRES_DB=keycloak
-  #     - POSTGRES_USER=keycloak
-  #     - POSTGRES_PASSWORD=keycloak
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   networks:
-  #     - keycloak-network
+  backend:
+    build: ./backend
+    container_name: spring-app
+    ports:
+      - "8080:8080"
+    environment:
+      # Use the service name 'keycloak' for internal communication
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:8180/realms/demo
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - app-network
 
 networks:
-  keycloak-network:
+  app-network:
     driver: bridge
-
-# volumes:
-#   postgres_data:
